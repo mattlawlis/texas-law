@@ -6,6 +6,9 @@ import { kv } from '@vercel/kv'
 
 import { auth } from '@/auth'
 import { type Chat } from '@/lib/types'
+import stripePackage from 'stripe';
+
+const stripe = stripePackage(process.env.STRIPE_SECRET_KEY);
 
 export async function getChats(userId?: string | null) {
   if (!userId) {
@@ -49,7 +52,7 @@ export async function removeChat({ id, path }: { id: string; path: string }) {
     }
   }
 
-  //Convert uid to string for consistent comparison with session.user.id
+  // Convert uid to string for consistent comparison with session.user.id
   const uid = String(await kv.hget(`chat:${id}`, 'userId'))
 
   if (uid !== session?.user?.id) {
@@ -139,6 +142,13 @@ export async function saveChat(chat: Chat) {
       member: `chat:${chat.id}`
     })
     await pipeline.exec()
+
+    // Example: Creating a subscription for the user upon saving a chat (or during signup)
+    const subscriptionResult = await createStripeSubscription(session.user.email, chat.paymentMethodId);
+    if (!subscriptionResult.success) {
+      console.error('Failed to create Stripe subscription:', subscriptionResult.error);
+      return { error: subscriptionResult.error };
+    }
   } else {
     return
   }
@@ -153,4 +163,32 @@ export async function getMissingKeys() {
   return keysRequired
     .map(key => (process.env[key] ? '' : key))
     .filter(key => key !== '')
+}
+
+export async function createStripeSubscription(email: string, paymentMethodId: string) {
+  try {
+    const customer = await stripe.customers.create({
+      email,
+      payment_method: paymentMethodId,
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: process.env.STRIPE_PRICE_ID }],
+      expand: ['latest_invoice.payment_intent'],
+    });
+
+    return {
+      success: true,
+      subscription,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 }
