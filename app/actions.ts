@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { kv } from '@vercel/kv'
-
 import { auth } from '@/auth'
 import { type Chat } from '@/lib/types'
 import stripePackage from 'stripe';
@@ -144,7 +143,7 @@ export async function saveChat(chat: Chat) {
     await pipeline.exec()
 
     // Example: Creating a subscription for the user upon saving a chat (or during signup)
-    const subscriptionResult = await createStripeSubscription(session.user.email, chat.paymentMethodId);
+    const subscriptionResult = await createStripeSubscription(session.user.email!, chat.paymentMethodId!);
     if (!subscriptionResult.success) {
       console.error('Failed to create Stripe subscription:', subscriptionResult.error);
       return { error: subscriptionResult.error };
@@ -185,17 +184,10 @@ export async function createStripeSubscription(email: string, paymentMethodId: s
       success: true,
       subscription,
     };
-  } catch (error) {
-    if (error instanceof Error) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    } else {
-      return {
-        success: false,
-        error: 'An unknown error occurred',
-      };
-    }
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'An unknown error occurred',
+    };
   }
 }
