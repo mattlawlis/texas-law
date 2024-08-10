@@ -140,11 +140,19 @@ export async function saveChat(chat: Chat) {
     });
     await pipeline.exec();
 
-    // Creating a subscription for the user upon saving a chat
-    const subscriptionResult = await createStripeSubscription(session.user.email, chat.paymentMethodId);
-    if (!subscriptionResult.success) {
-      console.error('Failed to create Stripe subscription:', subscriptionResult.error);
-      return { error: subscriptionResult.error };
+    // Ensure email and paymentMethodId are defined
+    const email = session.user.email;
+    const paymentMethodId = chat.paymentMethodId;
+
+    if (email && paymentMethodId) {
+      const subscriptionResult = await createStripeSubscription(email, paymentMethodId);
+      if (!subscriptionResult.success) {
+        console.error('Failed to create Stripe subscription:', subscriptionResult.error);
+        return { error: subscriptionResult.error };
+      }
+    } else {
+      console.error('Email or Payment Method ID is missing.');
+      return { error: 'Email or Payment Method ID is missing.' };
     }
   } else {
     return;
