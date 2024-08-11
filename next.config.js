@@ -12,6 +12,7 @@ module.exports = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      console.log('Applying client-side fallbacks');
       config.resolve.fallback = {
         crypto: require.resolve('crypto-browserify'),
         http: require.resolve('stream-http'),
