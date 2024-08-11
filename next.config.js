@@ -1,3 +1,5 @@
+const webpack = require('webpack');
+
 /** @type {import('next').NextConfig} */
 module.exports = {
   images: {
@@ -12,26 +14,18 @@ module.exports = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      console.log('Applying client-side fallbacks');
       config.resolve.fallback = {
         crypto: require.resolve('crypto-browserify'),
         http: require.resolve('stream-http'),
         https: require.resolve('https-browserify'),
       };
 
-      // Add polyfills to the entry point
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries = await originalEntry();
-        if (entries['main.js']) {
-          entries['main.js'].unshift(
-            require.resolve('crypto-browserify'),
-            require.resolve('stream-http'),
-            require.resolve('https-browserify')
-          );
-        }
-        return entries;
-      };
+      config.plugins.push(
+        new webpack.ProvidePlugin({
+          process: 'process/browser',
+          Buffer: ['buffer', 'Buffer'],
+        })
+      );
     }
 
     return config;
