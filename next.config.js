@@ -9,5 +9,16 @@ module.exports = {
         pathname: '**'
       }
     ]
-  }
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        crypto: require.resolve('crypto-browserify'),
+        http: require.resolve('stream-http'),
+        https: require.resolve('https-browserify'),
+      };
+    }
+
+    return config;
+  },
 }
