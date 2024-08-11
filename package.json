@@ -59,6 +59,7 @@
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "sonner": "^1.4.3",
+    "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "stripe": "^10.0.0",
     "usehooks-ts": "^2.16.0",
